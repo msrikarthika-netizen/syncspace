@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: syncspace_mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: syncspace
+
+  redis:
+    image: redis:7-alpine
+    container_name: syncspace_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    container_name: syncspace_backend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongodb
+      - redis
+    env_file: ./backend/.env
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/syncspace_dev
+      DEV_DB_URL: mongodb://mongodb:27017/syncspace_dev
+      PROD_DB_URL: mongodb://mongodb:27017/syncspace_prod
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai:8000
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  ai:
+    build: ./ai
+    container_name: syncspace_ai
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    depends_on:
+      - mongodb
+      - redis
+    env_file: ./ai/.env
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/syncspace_dev
+      MONGO_URL: mongodb://mongodb:27017/syncspace_dev
+      REDIS_URL: redis://redis:6379
+      BACKEND_URL: http://backend:3000
+    volumes:
+      - ./ai:/app
+
+  frontend:
+    build: ./frontend
+    container_name: syncspace_frontend
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
+      VITE_SOCKET_URL: http://localhost:3000
+      VITE_AI_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  mongo_data:
+  redis_data:
