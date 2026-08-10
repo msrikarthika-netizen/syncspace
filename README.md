@@ -1,5 +1,7 @@
 # SyncSpace
 
+
+
 <p align="center">
   <img src="./frontend/src/assets/ai-workspace-hero.png" alt="SyncSpace AI workspace hero screen" width="960" />
 </p>
