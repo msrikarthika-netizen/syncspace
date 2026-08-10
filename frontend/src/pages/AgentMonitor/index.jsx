@@ -159,14 +159,22 @@ export default function AgentMonitorPage() {
     });
   }, []);
 
-  const onTaskCompleted = useCallback(({ taskId: id, progress, reportId }) => {
+  const onTaskCompleted = useCallback(({ taskId: id, reportId }) => {
     if (id === taskId) {
       setTask(t => ({ ...t, status: 'completed', progress: 100, report: { _id: reportId } }));
     }
   }, [taskId]);
 
-  const onTaskProgress = useCallback(({ taskId: id, progress }) => {
-    if (id === taskId) setTask(t => ({ ...t, progress }));
+  const onTaskLifecycle = useCallback(({ taskId: id, status, progress }) => {
+    if (id === taskId) {
+      setTask(t => ({ ...t, status: status || t.status, progress: progress ?? t.progress }));
+    }
+  }, [taskId]);
+
+  const onTaskProgress = useCallback(({ taskId: id, status, progress }) => {
+    if (id === taskId) {
+      setTask(t => ({ ...t, status: status || t.status, progress: progress ?? t.progress }));
+    }
   }, [taskId]);
 
   const onReportReady = useCallback(({ taskId: id, reportId }) => {
@@ -181,6 +189,8 @@ export default function AgentMonitorPage() {
 
   useEffect(() => {
     joinTaskRoom(taskId);
+    on('task:queued', onTaskLifecycle);
+    on('task:processing', onTaskLifecycle);
     on('subtask:started', onSubtaskUpdate);
     on('subtask:completed', onSubtaskUpdate);
     on('task:completed', onTaskCompleted);
@@ -189,6 +199,8 @@ export default function AgentMonitorPage() {
     on('task:failed', onTaskFailed);
     return () => {
       leaveTaskRoom(taskId);
+      off('task:queued', onTaskLifecycle);
+      off('task:processing', onTaskLifecycle);
       off('subtask:started', onSubtaskUpdate);
       off('subtask:completed', onSubtaskUpdate);
       off('task:completed', onTaskCompleted);
@@ -196,7 +208,7 @@ export default function AgentMonitorPage() {
       off('report:ready', onReportReady);
       off('task:failed', onTaskFailed);
     };
-  }, [taskId, joinTaskRoom, leaveTaskRoom, on, off, onSubtaskUpdate, onTaskCompleted, onTaskProgress, onReportReady, onTaskFailed]);
+  }, [taskId, joinTaskRoom, leaveTaskRoom, on, off, onTaskLifecycle, onSubtaskUpdate, onTaskCompleted, onTaskProgress, onReportReady, onTaskFailed]);
 
   if (loading) return (
     <div className="p-8 flex items-center justify-center h-full">

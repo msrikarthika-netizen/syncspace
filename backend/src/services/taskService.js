@@ -20,19 +20,23 @@ class TaskService {
     });
 
     // Queue task for AI processing (async — don't await)
-    this.queueForAI(task._id.toString(), task, userId).catch((err) => {
+    this.queueForAI(task._id.toString(), task).catch((err) => {
       console.error('AI queueing failed for task', task._id, err.message);
     });
 
     return task;
   }
 
-  async queueForAI(taskId, taskData, userId) {
+  async queueForAI(taskId, taskData) {
     const io = getIO();
 
     // Mark as queued
     await taskRepository.updateById(taskId, { status: 'queued', progress: 5 });
-    io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_QUEUED, { taskId, progress: 5 });
+    io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_QUEUED, {
+      taskId,
+      status: 'queued',
+      progress: 5,
+    });
 
     try {
       // Mark as processing
@@ -41,7 +45,11 @@ class TaskService {
         progress: 10,
         'aiMetadata.processingStartedAt': new Date(),
       });
-      io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_PROCESSING, { taskId, progress: 10 });
+      io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_PROCESSING, {
+        taskId,
+        status: 'processing',
+        progress: 10,
+      });
 
       // Call Python AI service
       const aiResult = await aiService.processTask(taskId, taskData);
@@ -58,11 +66,19 @@ class TaskService {
           progress: 100,
           reportId: aiResult.report_id,
         });
+        return;
       }
+
+      if (['queued', 'processing'].includes(aiResult.status)) {
+        return;
+      }
+
+      throw new Error(aiResult.message || `AI service returned unexpected status: ${aiResult.status}`);
     } catch (err) {
       await taskRepository.updateById(taskId, { status: 'failed', progress: 0 });
       io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_FAILED, {
         taskId,
+        status: 'failed',
         error: err.message,
       });
     }
@@ -154,7 +170,11 @@ class TaskService {
       progress,
     });
 
-    io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_PROGRESS, { taskId, progress });
+    io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_PROGRESS, {
+      taskId,
+      status: 'processing',
+      progress,
+    });
 
     const subtaskPayload = {
       id: subtask._id,
@@ -190,6 +210,7 @@ class TaskService {
     await taskRepository.updateById(taskId, { status: 'failed', progress: 0 });
     io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_FAILED, {
       taskId,
+      status: 'failed',
       error: errorMsg || 'Unknown orchestration error',
     });
   }

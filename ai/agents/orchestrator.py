@@ -30,8 +30,8 @@ async def _notify_backend(endpoint: str, payload: dict, attempts: int = 3) -> di
     """
     url = f"{settings.backend_url}{endpoint}"
     headers = {}
-    if settings.internal_webhook_secret:
-        headers["x-internal-secret"] = settings.internal_webhook_secret
+    if settings.webhook_secret:
+        headers["x-internal-secret"] = settings.webhook_secret
 
     last_error = None
     for attempt in range(1, attempts + 1):

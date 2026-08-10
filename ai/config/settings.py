@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     ai_port: int = 8000
+    node_env: str = "development"
     huggingface_api_key: str = ""
     hf_model: str = "Qwen/Qwen2.5-7B-Instruct:fastest"
     hf_router_url: str = "https://router.huggingface.co/v1/chat/completions"
@@ -17,6 +18,14 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         return self.mongo_uri or self.mongo_url
+
+    @property
+    def webhook_secret(self) -> str:
+        if self.internal_webhook_secret:
+            return self.internal_webhook_secret
+        if self.node_env != "production":
+            return "syncspace_dev_internal_webhook_secret"
+        return ""
 
     class Config:
         env_file = ".env"

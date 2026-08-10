@@ -44,12 +44,14 @@ class ReportService {
     if (taskStatus === 'completed') {
       io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_COMPLETED, {
         taskId,
+        status: 'completed',
         progress: 100,
         reportId: report._id,
       });
     } else {
       io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_FAILED, {
         taskId,
+        status: 'failed',
         error: 'One or more AI agents failed. Review the generated report.',
         reportId: report._id,
       });

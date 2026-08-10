@@ -37,7 +37,7 @@ async def process_task(request: TaskRequest, background_tasks: BackgroundTasks):
     Receive a task from the Node.js backend and kick off AI orchestration.
     Returns immediately; processing runs in the background.
     """
-    if not settings.internal_webhook_secret:
+    if not settings.webhook_secret:
         raise HTTPException(
             status_code=503,
             detail="INTERNAL_WEBHOOK_SECRET must be configured before AI tasks can be processed",
