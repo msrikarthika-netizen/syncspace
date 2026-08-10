@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import userRepository from '../repositories/userRepository.js';
 import { generateToken } from '../utils/common/authUtils.js';
 
@@ -9,7 +10,8 @@ class AuthService {
     const existingUsername = await userRepository.findByUsername(username);
     if (existingUsername) throw new Error('Username already taken');
 
-    const user = await userRepository.create({ username, email, password, role });
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await userRepository.create({ username, email, passwordHash, role });
     const token = generateToken({ id: user._id, email: user.email, role: user.role });
 
     return {
@@ -28,7 +30,7 @@ class AuthService {
     const user = await userRepository.findByEmail(email);
     if (!user) throw new Error('Invalid email or password');
 
-    const isMatch = user.comparePassword(password);
+    const isMatch = bcrypt.compareSync(password, user.passwordHash);
     if (!isMatch) throw new Error('Invalid email or password');
 
     const token = generateToken({ id: user._id, email: user.email, role: user.role });

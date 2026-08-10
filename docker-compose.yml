@@ -1,16 +1,18 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:7
-    container_name: syncspace_mongo
+  postgres:
+    image: postgres:16-alpine
+    container_name: syncspace_postgres
     restart: unless-stopped
     ports:
-      - '27017:27017'
+      - '5432:5432'
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      MONGO_INITDB_DATABASE: syncspace
+      POSTGRES_DB: syncspace_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
 
   redis:
     image: redis:7-alpine
@@ -28,17 +30,17 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - mongodb
+      - postgres
       - redis
     env_file: ./backend/.env
     environment:
-      MONGO_URI: mongodb://mongodb:27017/syncspace_dev
-      DEV_DB_URL: mongodb://mongodb:27017/syncspace_dev
-      PROD_DB_URL: mongodb://mongodb:27017/syncspace_prod
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/syncspace_dev
+      DEV_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/syncspace_dev
+      PROD_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/syncspace_prod
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai:8000
       FRONTEND_URL: http://localhost:5173
-      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-syncspace_dev_internal_webhook_secret}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-syncspace_internal_webhook_secret_change_this}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -50,15 +52,13 @@ services:
     ports:
       - '8000:8000'
     depends_on:
-      - mongodb
+      - postgres
       - redis
     env_file: ./ai/.env
     environment:
-      MONGO_URI: mongodb://mongodb:27017/syncspace_dev
-      MONGO_URL: mongodb://mongodb:27017/syncspace_dev
       REDIS_URL: redis://redis:6379
       BACKEND_URL: http://backend:3000
-      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-syncspace_dev_internal_webhook_secret}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-syncspace_internal_webhook_secret_change_this}
     volumes:
       - ./ai:/app
 
@@ -79,5 +79,5 @@ services:
       - /app/node_modules
 
 volumes:
-  mongo_data:
+  postgres_data:
   redis_data:

@@ -1,9 +1,9 @@
 import taskRepository from '../repositories/taskRepository.js';
-import SubTask from '../models/SubTask.js';
+import subtaskRepository from '../repositories/subtaskRepository.js';
 import aiService from './aiService.js';
 import { getIO } from '../server/socketServer.js';
 import { SOCKET_EVENTS } from '../utils/common/eventConstants.js';
-import mongoose from 'mongoose';
+import { isUuid } from '../config/dbConfig.js';
 
 class TaskService {
   async createTask({ title, description, priority, tags, deadline, userId, workspaceId }) {
@@ -19,8 +19,7 @@ class TaskService {
       progress: 0,
     });
 
-    // Queue task for AI processing (async — don't await)
-    this.queueForAI(task._id.toString(), task).catch((err) => {
+    this.queueForAI(task._id, task).catch((err) => {
       console.error('AI queueing failed for task', task._id, err.message);
     });
 
@@ -30,7 +29,6 @@ class TaskService {
   async queueForAI(taskId, taskData) {
     const io = getIO();
 
-    // Mark as queued
     await taskRepository.updateById(taskId, { status: 'queued', progress: 5 });
     io.to(`task:${taskId}`).emit(SOCKET_EVENTS.TASK_QUEUED, {
       taskId,
@@ -39,7 +37,6 @@ class TaskService {
     });
 
     try {
-      // Mark as processing
       await taskRepository.updateById(taskId, {
         status: 'processing',
         progress: 10,
@@ -51,7 +48,6 @@ class TaskService {
         progress: 10,
       });
 
-      // Call Python AI service
       const aiResult = await aiService.processTask(taskId, taskData);
 
       if (aiResult.status === 'completed') {
@@ -92,18 +88,18 @@ class TaskService {
   }
 
   async getTaskById(taskId, userId) {
-    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new Error('Task not found');
+    if (!isUuid(taskId)) throw new Error('Task not found');
     const task = await taskRepository.findWithSubtasks(taskId);
     if (!task) throw new Error('Task not found');
-    if (userId && task.assignedBy?._id?.toString() !== userId && task.assignedBy?.toString() !== userId) {
+    const ownerId = task.assignedBy?._id || task.assignedBy;
+    if (userId && ownerId !== userId) {
       throw new Error('Unauthorized');
     }
     return task;
   }
 
   async getStats(userId) {
-    const objId = new mongoose.Types.ObjectId(userId);
-    const raw = await taskRepository.getStats(objId);
+    const raw = await taskRepository.getStats(userId);
     const stats = {
       total: 0,
       pending: 0,
@@ -120,52 +116,27 @@ class TaskService {
   }
 
   async deleteTask(taskId, userId) {
-    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new Error('Task not found');
+    if (!isUuid(taskId)) throw new Error('Task not found');
     const task = await taskRepository.findById(taskId);
     if (!task) throw new Error('Task not found');
-    if (task.assignedBy.toString() !== userId) throw new Error('Unauthorized');
+    const ownerId = task.assignedBy?._id || task.assignedBy;
+    if (ownerId !== userId) throw new Error('Unauthorized');
 
-    // Clean up subtasks
-    if (task.subtasks?.length) {
-      await SubTask.deleteMany({ parentTask: taskId });
-    }
+    await subtaskRepository.deleteByTask(taskId);
     await taskRepository.deleteById(taskId);
     return { deleted: true };
   }
 
-  // Called from Python AI service via webhook to update subtask progress
   async updateSubtaskFromAI(taskId, subtaskData) {
     const io = getIO();
     const task = await taskRepository.findById(taskId);
     if (!task) throw new Error('Task not found');
 
     const status = subtaskData.status || 'running';
-
-    // Upsert subtask
-    const subtask = await SubTask.findOneAndUpdate(
-      { parentTask: taskId, agentType: subtaskData.agent_type, title: subtaskData.title },
-      {
-        parentTask: taskId,
-        title: subtaskData.title,
-        description: subtaskData.description,
-        agentType: subtaskData.agent_type,
-        agentName: subtaskData.agent_name,
-        status,
-        result: subtaskData.result || '',
-        error: subtaskData.error,
-        order: subtaskData.order || 0,
-        startedAt: subtaskData.started_at ? new Date(subtaskData.started_at) : undefined,
-        completedAt: subtaskData.completed_at ? new Date(subtaskData.completed_at) : undefined,
-        durationMs: subtaskData.duration_ms,
-      },
-      { upsert: true, returnDocument: 'after' }
-    );
-
+    const subtask = await subtaskRepository.upsertFromAI(taskId, { ...subtaskData, status });
     const progress = Math.max(10, Math.min(95, Number(subtaskData.progress) || task.progress || 10));
 
-    // Add to task if new
     await taskRepository.updateById(taskId, {
-      $addToSet: { subtasks: subtask._id },
       status: 'processing',
       progress,
     });
@@ -191,11 +162,9 @@ class TaskService {
       durationMs: subtask.durationMs,
     };
 
-    const eventName = status === 'running'
-      ? SOCKET_EVENTS.SUBTASK_STARTED
-      : SOCKET_EVENTS.SUBTASK_COMPLETED;
+    const eventName =
+      status === 'running' ? SOCKET_EVENTS.SUBTASK_STARTED : SOCKET_EVENTS.SUBTASK_COMPLETED;
 
-    // Emit real-time update
     io.to(`task:${taskId}`).emit(eventName, {
       taskId,
       subtask: subtaskPayload,
@@ -204,7 +173,6 @@ class TaskService {
     return subtask;
   }
 
-  // Called from Python AI service via webhook if the entire orchestration fails
   async failTaskFromAI(taskId, errorMsg) {
     const io = getIO();
     await taskRepository.updateById(taskId, { status: 'failed', progress: 0 });

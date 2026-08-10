@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Backend-Node.js-339933?logo=nodedotjs&logoColor=fff" alt="Node.js badge" />
   <img src="https://img.shields.io/badge/API-Express-000000?logo=express&logoColor=fff" alt="Express badge" />
   <img src="https://img.shields.io/badge/Realtime-Socket.IO-010101?logo=socketdotio&logoColor=fff" alt="Socket.IO badge" />
-  <img src="https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=fff" alt="MongoDB badge" />
+  <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=fff" alt="PostgreSQL badge" />
   <img src="https://img.shields.io/badge/Queue-Redis-DC382D?logo=redis&logoColor=fff" alt="Redis badge" />
   <img src="https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=fff" alt="JWT badge" />
   <img src="https://img.shields.io/badge/Validation-Zod-3E67B1?logo=zod&logoColor=fff" alt="Zod badge" />
@@ -40,7 +40,7 @@ SyncSpace turns a manager's request into a tracked AI workflow. The frontend cap
 - Product landing page, authentication, dashboard, task manager, agent monitor, and reports workspace.
 - AI orchestration service with specialist-agent workflow, Hugging Face integration, and persisted task/report state.
 - Backend API for auth, task lifecycle, report management, internal AI webhooks, and realtime updates.
-- MongoDB for core data, Redis for queue/realtime infrastructure, and Docker Compose for full-stack startup.
+- PostgreSQL for core data, Redis for queue/realtime infrastructure, and Docker Compose for full-stack startup.
 - Downloadable sample AI reports included in the repository.
 
 ## Architecture
@@ -48,20 +48,19 @@ SyncSpace turns a manager's request into a tracked AI workflow. The frontend cap
 ```text
 syncspace/
 ├── frontend/   React + Vite + Tailwind CSS + Socket.IO client
-├── backend/    Node.js + Express + MongoDB + Redis + Socket.IO
-└── ai/         Python + FastAPI + Hugging Face + LangGraph + MongoDB
+├── backend/    Node.js + Express + PostgreSQL + Redis + Socket.IO
+└── ai/         Python + FastAPI + Hugging Face + LangGraph
 ```
 
 ```mermaid
 flowchart LR
   U[Manager / Browser] --> F[Frontend]
   F --> B[Backend API]
-  B --> M[(MongoDB)]
+  B --> P[(PostgreSQL)]
   B --> R[(Redis)]
   B --> S[Socket.IO]
   B --> A[AI Service]
   A --> H[Hugging Face]
-  A --> M
   A --> B
   S --> U
 ```
@@ -107,14 +106,13 @@ sequenceDiagram
   participant Frontend
   participant Backend
   participant AI as AI Service
-  participant DB as MongoDB
+  participant DB as PostgreSQL
   participant Live as Socket.IO
 
   Manager->>Frontend: Create a task
   Frontend->>Backend: POST /api/v1/tasks
   Backend->>DB: Save task
   Backend->>AI: Start orchestration
-  AI->>DB: Read and update task state
   AI->>Backend: Send progress webhooks
   Backend->>Live: Broadcast task updates
   AI->>Backend: Save final report
@@ -128,9 +126,9 @@ sequenceDiagram
 | Layer | Technologies |
 |-------|--------------|
 | Frontend | React 19, Vite, Tailwind CSS, Radix UI, TanStack Query, React Router, Axios, GSAP, Lenis, Lucide React, Socket.IO Client |
-| Backend | Node.js, Express 5, Mongoose, JWT, bcryptjs, Zod, Bull, ioredis, Socket.IO, Nodemailer |
-| AI Service | Python, FastAPI, Uvicorn, Pydantic, Motor, PyMongo, Hugging Face Hub, LangGraph, aiohttp, Celery, Redis |
-| Infrastructure | Docker, Docker Compose, MongoDB, Redis |
+| Backend | Node.js, Express 5, PostgreSQL, pg, JWT, bcryptjs, Zod, Bull, ioredis, Socket.IO, Nodemailer |
+| AI Service | Python, FastAPI, Uvicorn, Pydantic, Hugging Face Hub, LangGraph, aiohttp, Celery, Redis |
+| Infrastructure | Docker, Docker Compose, PostgreSQL, Redis |
 
 ## Run With Docker
 
@@ -149,7 +147,7 @@ frontend/.env
 Minimum example values:
 
 ```env
-MONGO_URI=mongodb://mongodb:27017/syncspace_dev
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/syncspace_dev
 REDIS_URL=redis://redis:6379
 AI_SERVICE_URL=http://ai:8000
 BACKEND_URL=http://backend:3000
@@ -165,7 +163,7 @@ Important notes:
 
 - Keep `INTERNAL_WEBHOOK_SECRET` identical in `backend/.env` and `ai/.env`.
 - `HUGGINGFACE_API_KEY` is required for real AI output.
-- MongoDB and Redis are already provided by `docker-compose.yml`.
+- PostgreSQL and Redis are already provided by `docker-compose.yml`.
 
 ### 2. Start The Stack
 
@@ -194,7 +192,7 @@ docker compose down
 
 1. A manager lands on the public site and enters the workspace.
 2. The frontend sends a task to the backend API.
-3. The backend saves the task in MongoDB and triggers the AI service.
+3. The backend saves the task in PostgreSQL and triggers the AI service.
 4. The AI orchestrator splits the task into specialist work.
 5. Progress updates are pushed through internal webhooks and Socket.IO.
 6. The final report is saved and attached to the task.

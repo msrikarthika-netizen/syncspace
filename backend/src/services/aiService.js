@@ -11,9 +11,10 @@ class AiService {
   // Trigger the AI orchestrator to process a task
   async processTask(taskId, taskData) {
     try {
+      const assignedBy = taskData.assignedBy?._id || taskData.assignedBy || taskData.assigned_by;
       const response = await aiClient.post('/api/tasks/process', {
         task_id: taskId,
-        user_id: taskData.assignedBy?.toString(),
+        user_id: assignedBy ? String(assignedBy) : undefined,
         title: taskData.title,
         description: taskData.description,
         priority: taskData.priority,
