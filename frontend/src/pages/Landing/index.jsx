@@ -21,7 +21,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import aiOperationsRoom from '../../assets/ai-operations-room.png';
 import aiWorkspaceCollaboration from '../../assets/ai-workspace-collaboration.png';
-import aiWorkspaceHero from '../../assets/ai-workspace-hero-4k.png';
+import aiNeuralNetwork from '../../assets/ai-neural-network-4k.png';
 
 const phrases = [
   'Welcome to the AI Workspace.',
@@ -103,7 +103,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
     const context = gsap.context(() => {
-      gsap.to('[data-hero-image]', { scale: 1.065, duration: 16, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      gsap.to('[data-ai-hero-visual]', { y: -14, scale: 1.035, duration: 10, repeat: -1, yoyo: true, ease: 'sine.inOut' });
       gsap.to('[data-orbit]', { rotate: 360, duration: 28, repeat: -1, ease: 'none', transformOrigin: 'center' });
       gsap.to('[data-core]', { scale: 1.045, duration: 1.6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
     }, rootRef);
@@ -115,26 +115,43 @@ export default function LandingPage() {
   return (
     <main ref={rootRef} className="min-h-screen overflow-hidden bg-[#f1f5f1] text-[#10201b] selection:bg-[#dfff75]">
       <section className="relative isolate min-h-[780px] overflow-hidden bg-[#0b1711] text-white lg:min-h-screen">
-        <img data-hero-image src={aiWorkspaceHero} alt="AI workspace team collaborating around a connected task display" className="absolute inset-0 -z-20 h-full w-full object-cover object-center opacity-80" />
-        <div className="absolute inset-0 -z-10 bg-[#06100b]/58" />
+        <div aria-hidden="true" className="absolute inset-0 -z-20 bg-[#0b1711]" />
+        <div aria-hidden="true" className="absolute -right-48 top-1/2 -z-10 h-[720px] w-[720px] -translate-y-1/2 rounded-full bg-[#dfff75]/[0.09] blur-3xl" />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(115deg,rgba(6,16,11,0.24),rgba(6,16,11,0.72)_60%,rgba(6,16,11,0.96))]" />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-3/5 bg-[#06100b]/78" />
+        <div aria-hidden="true" className="absolute inset-y-0 right-0 -z-10 hidden w-[46%] overflow-hidden xl:block">
+          <div data-ai-hero-visual className="absolute inset-[-4%]">
+            <img src={aiNeuralNetwork} alt="" className="h-full w-full object-cover object-center opacity-75" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_45%,rgba(223,255,117,0.28),transparent_32%)] mix-blend-screen" />
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path d="M12 70 C32 51 44 72 58 46 S78 31 96 20" fill="none" stroke="rgba(223,255,117,0.55)" strokeWidth="0.35" strokeDasharray="1.3 1.8" />
+              <path d="M6 86 C26 64 49 86 66 62 S82 60 98 42" fill="none" stroke="rgba(223,255,117,0.34)" strokeWidth="0.24" strokeDasharray="0.9 2.1" />
+              <circle cx="58" cy="46" r="1.15" fill="#dfff75" className="animate-pulse" />
+              <circle cx="78" cy="31" r="0.75" fill="#dfff75" className="animate-pulse" />
+              <circle cx="66" cy="62" r="0.85" fill="#dfff75" className="animate-pulse" />
+            </svg>
+          </div>
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,#0b1711_0%,rgba(11,23,17,0.9)_12%,rgba(11,23,17,0.16)_52%,rgba(11,23,17,0.46)_100%)]" />
+        </div>
 
-        <nav className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
+        <nav className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
           <Logo />
           <div className="hidden items-center gap-8 text-sm font-semibold text-white/70 md:flex"><a href="#workflow" className="hover:text-[#dfff75]">How it works</a><a href="#agents" className="hover:text-[#dfff75]">AI network</a><a href="#experience" className="hover:text-[#dfff75]">Experience</a></div>
           <Link to={isAuthenticated ? '/dashboard' : '/login'} className="hidden rounded-full border border-white/35 px-4 py-2 text-sm font-bold transition-all hover:border-[#dfff75] hover:bg-[#dfff75] hover:text-[#10201b] sm:inline-flex">{isAuthenticated ? 'Open workspace' : 'Sign in'}</Link>
           <Link to={isAuthenticated ? '/dashboard' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border border-white/30 sm:hidden" aria-label="Open SyncSpace"><Menu size={18} /></Link>
         </nav>
 
-        <div className="mx-auto flex min-h-[690px] max-w-[1440px] flex-col justify-end px-5 pb-8 pt-24 sm:px-8 lg:min-h-[calc(100vh-88px)] lg:px-12 lg:pb-11">
-          <p className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-[#dfff75]"><span className="h-2 w-2 rounded-full bg-[#dfff75]" /> An intelligent operating space</p>
-          <h1 className="max-w-5xl text-[clamp(4.1rem,10.5vw,10rem)] font-extrabold leading-[0.8] tracking-[-0.075em]">SyncSpace<br /><span className="text-[#dfff75]">moves work forward.</span></h1>
-          <p className="mt-7 min-h-7 text-lg font-semibold text-white/90 sm:text-xl" aria-live="polite">{phrase.slice(0, characters)}<span className="ml-1 inline-block h-5 w-0.5 animate-pulse bg-[#dfff75] align-[-2px]" /></p>
-          <div className="mt-9 grid gap-7 border-t border-white/25 pt-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <p className="max-w-xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">A single place to brief the work, coordinate AI specialists, and receive the finished result with its full context intact.</p>
-            <div className="flex flex-wrap gap-3"><Link to={workspacePath} className="inline-flex items-center gap-2 rounded-full bg-[#dfff75] px-5 py-3 text-sm font-black text-[#10201b] transition-transform hover:-translate-y-0.5">Create a workspace <ArrowRight size={17} /></Link><a href="#agents" className="inline-flex items-center gap-2 rounded-full border border-white/40 px-5 py-3 text-sm font-bold hover:bg-white hover:text-[#10201b]">Meet the AI network <ArrowDownRight size={17} /></a></div>
+        <div className="relative z-10 mx-auto flex max-w-[1440px] flex-col justify-center px-5 py-12 sm:px-8 lg:min-h-[calc(100vh-88px)] lg:px-12 lg:py-16">
+          <p className="mb-4 flex items-center gap-3 text-xs font-bold uppercase leading-5 tracking-[0.18em] text-[#dfff75]"><span className="h-2 w-2 rounded-full bg-[#dfff75]" /> An intelligent operating space</p>
+          <h1 className="max-w-5xl text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold leading-tight tracking-normal">SyncSpace<br /><span className="text-[#dfff75]">moves work forward.</span></h1>
+          <div className="mt-6 flex min-h-[3.5rem] items-center sm:mt-8">
+            <p className="text-lg font-semibold leading-7 text-white/90 sm:text-xl" aria-live="polite">{phrase.slice(0, characters)}<span className="ml-1 inline-block h-5 w-0.5 animate-pulse bg-[#dfff75] align-[-2px]" /></p>
           </div>
-          <div className="mt-9 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-white/50"><span>Brief. Coordinate. Decide.</span><span className="hidden sm:block">Scroll to explore</span></div>
+          <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 border-t border-white/25 pt-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <p className="max-w-xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">A single place to brief the work, coordinate AI specialists, and receive the finished result with its full context intact.</p>
+            <div className="flex min-w-0 flex-wrap gap-3"><Link to={workspacePath} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#dfff75] px-5 py-3 text-sm font-black text-[#10201b] transition-transform hover:-translate-y-0.5 sm:w-auto">Create a workspace <ArrowRight size={17} /></Link><a href="#agents" className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/40 px-5 py-3 text-sm font-bold hover:bg-white hover:text-[#10201b] sm:w-auto">Meet the AI network <ArrowDownRight size={17} /></a></div>
+          </div>
+          <div className="mt-8 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-white/50"><span>Brief. Coordinate. Decide.</span><span className="hidden sm:block">Scroll to explore</span></div>
         </div>
       </section>
 
