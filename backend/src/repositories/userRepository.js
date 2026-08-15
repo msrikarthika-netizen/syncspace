@@ -32,6 +32,25 @@ class UserRepository {
     const result = await query('SELECT * FROM app_users WHERE username = $1', [username]);
     return toUser(result.rows[0]);
   }
+
+  async updateUsername(id, username) {
+    const result = await query(
+      'UPDATE app_users SET username = $1 WHERE id = $2 RETURNING *',
+      [username, id]
+    );
+    return toUser(result.rows[0]);
+  }
+
+  async promoteAndActivateByEmail(email) {
+    const result = await query(
+      `UPDATE app_users
+       SET role = 'admin', is_active = TRUE
+       WHERE email = LOWER($1)
+       RETURNING *`,
+      [email]
+    );
+    return toUser(result.rows[0]);
+  }
 }
 
 export default new UserRepository();

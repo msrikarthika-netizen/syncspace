@@ -46,3 +46,26 @@ export const getProfile = async (req, res) => {
       .json(errorResponse(err.message));
   }
 };
+
+export const updateProfile = async (req, res) => {
+  const { username } = req.body || {};
+  const normalizedUsername = typeof username === 'string'
+    ? username.trim().replace(/\s+/g, ' ')
+    : '';
+
+  if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(normalizedUsername) || normalizedUsername.length < 2 || normalizedUsername.length > 50) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json(errorResponse('Name must contain only letters and single spaces (2–50 characters)'));
+  }
+
+  try {
+    const profile = await authService.updateUsername(req.user.id, normalizedUsername);
+    return res.status(StatusCodes.OK).json(successResponse(profile, 'Profile updated'));
+  } catch (err) {
+    const status = err.message === 'Username already taken'
+      ? StatusCodes.CONFLICT
+      : StatusCodes.BAD_REQUEST;
+    return res.status(status).json(errorResponse(err.message));
+  }
+};

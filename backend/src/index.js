@@ -5,6 +5,7 @@ import connectDB from './config/dbConfig.js';
 import { PORT, NODE_ENV } from './config/serverConfig.js';
 import { initSocket } from './server/socketServer.js';
 import apiRouter from './routes/apiRoutes.js';
+import { ensureConfiguredAdmin } from './services/adminBootstrapService.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -36,6 +37,7 @@ app.use((err, req, res, _next) => {
 // ── Start ─────────────────────────────────────────────────────
 async function start() {
   await connectDB();
+  await ensureConfiguredAdmin();
   initSocket(httpServer);
 
   httpServer.listen(PORT, () => {

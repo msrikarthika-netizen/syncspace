@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "db:migrate": "node scripts/migrate.js",
+    "admin:promote": "node scripts/promote-admin.js",
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },

@@ -8,6 +8,10 @@ import TaskManagerPage from './pages/TaskManager';
 import CommandCenterPage from './pages/CommandCenter';
 import AgentMonitorPage from './pages/AgentMonitor';
 import { ReportsListPage, ReportDetailPage } from './pages/Reports';
+import ProfilePage from './pages/Profile';
+import SubscriptionPage from './pages/Subscription';
+import AdminPanelPage from './pages/Admin';
+import AdminLayout from './components/organisms/Layout/AdminLayout';
 
 function Protected({ children }) {
   const { isAuthenticated } = useAuth();
@@ -17,6 +21,12 @@ function Protected({ children }) {
 function GuestOnly({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+}
+
+function AdminProtected({ children }) {
+  const { isAuthenticated, isAdmin } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return isAdmin ? <AdminLayout>{children}</AdminLayout> : <Navigate to="/dashboard" replace />;
 }
 
 export default function AppRoutes() {
@@ -35,6 +45,9 @@ export default function AppRoutes() {
       <Route path="/agents/:taskId" element={<Protected><AgentMonitorPage /></Protected>} />
       <Route path="/reports" element={<Protected><ReportsListPage /></Protected>} />
       <Route path="/reports/:reportId" element={<Protected><ReportDetailPage /></Protected>} />
+      <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
+      <Route path="/subscription" element={<Protected><SubscriptionPage /></Protected>} />
+      <Route path="/admin" element={<AdminProtected><AdminPanelPage /></AdminProtected>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

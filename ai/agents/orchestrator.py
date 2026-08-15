@@ -44,11 +44,23 @@ async def _notify_backend(endpoint: str, payload: dict, attempts: int = 3) -> di
                 raise RuntimeError(data.get("message", "Backend rejected the workflow update"))
             return data
         except (httpx.HTTPError, ValueError, RuntimeError) as exc:
-            last_error = exc
+            if isinstance(exc, httpx.HTTPStatusError):
+                try:
+                    response_data = exc.response.json()
+                    backend_message = (
+                        response_data.get("message")
+                        or response_data.get("detail")
+                        or exc.response.text
+                    )
+                except ValueError:
+                    backend_message = exc.response.text
+                last_error = RuntimeError(f"{exc} — {backend_message}")
+            else:
+                last_error = exc
             if attempt < attempts:
                 delay_seconds = 0.5 * attempt
                 logger.warning(
-                    f"Backend notification failed [{url}] (attempt {attempt}/{attempts}): {exc}. "
+                    f"Backend notification failed [{url}] (attempt {attempt}/{attempts}): {last_error}. "
                     f"Retrying in {delay_seconds}s."
                 )
                 await asyncio.sleep(delay_seconds)

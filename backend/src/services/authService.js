@@ -11,7 +11,10 @@ class AuthService {
     if (existingUsername) throw new Error('Username already taken');
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await userRepository.create({ username, email, passwordHash, role });
+    // Public registration can select a contributor or manager workspace role,
+    // but never grants privileged administrator access.
+    const requestedRole = role === 'manager' ? 'manager' : 'member';
+    const user = await userRepository.create({ username, email, passwordHash, role: requestedRole });
     const token = generateToken({ id: user._id, email: user.email, role: user.role });
 
     return {
@@ -29,6 +32,7 @@ class AuthService {
   async login({ email, password }) {
     const user = await userRepository.findByEmail(email);
     if (!user) throw new Error('Invalid email or password');
+    if (user.isActive === false) throw new Error('This account has been suspended');
 
     const isMatch = bcrypt.compareSync(password, user.passwordHash);
     if (!isMatch) throw new Error('Invalid email or password');
@@ -50,6 +54,25 @@ class AuthService {
   async getProfile(userId) {
     const user = await userRepository.findById(userId);
     if (!user) throw new Error('User not found');
+    return {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
+  }
+
+  async updateUsername(userId, username) {
+    const existingUsername = await userRepository.findByUsername(username);
+    if (existingUsername && String(existingUsername._id) !== String(userId)) {
+      throw new Error('Username already taken');
+    }
+
+    const user = await userRepository.updateUsername(userId, username);
+    if (!user) throw new Error('User not found');
+
     return {
       id: user._id,
       username: user.username,

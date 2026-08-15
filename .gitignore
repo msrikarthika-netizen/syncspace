@@ -1,6 +1,14 @@
 node_modules/
 dist/
+.next/
+.nuxt/
+.vite/
+.parcel-cache/
+.turbo/
+.tmp-browser-profile/
 .env
+.env.*
+!.env.example
 *.local
 __pycache__/
 *.pyc
@@ -25,6 +33,11 @@ yarn-error.log*
 .vscode/
 mongo_data/
 redis_data/
+.redis/
+*.sqlite
+*.sqlite3
+*.db
+.eslintcache
 .cache/
 coverage/
 
@@ -32,3 +45,13 @@ coverage/
 .agents/
 .codex/
 .qodo/
+
+# OS-generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Local project documentation and legacy migration kept outside version control
+/TECHNICAL_DOCUMENTATION.md
+/TECHNICAL_DOCUMENTATION.pdf
+/backend/migrations/old_sql_script

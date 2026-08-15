@@ -26,3 +26,7 @@ export const MAIL_HOST = process.env.MAIL_HOST;
 export const MAIL_PORT = process.env.MAIL_PORT;
 export const MAIL_USER = process.env.MAIL_USER;
 export const MAIL_PASS = process.env.MAIL_PASS;
+// The configured bootstrap administrator must already be a registered user.
+// At startup the account is promoted and reactivated, which makes local/admin
+// provisioning deterministic without storing a password in configuration.
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim().toLowerCase();

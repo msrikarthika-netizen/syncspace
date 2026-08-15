@@ -136,16 +136,23 @@ class TaskRepository {
       'aiMetadata.processingDurationMs': ['processingDurationMs', 'int'],
     };
 
+    let aiMetadataExpression = "COALESCE(ai_metadata, '{}'::jsonb)";
+    let hasAiMetadataUpdate = false;
+
     Object.entries(aiMetadataFields).forEach(([key, [jsonKey, type]]) => {
       if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
         const value = data[key] instanceof Date ? data[key].toISOString() : data[key];
         const placeholder = addValue(value);
         const cast = type === 'int' ? 'int' : 'text';
-        clauses.push(
-          `ai_metadata = jsonb_set(COALESCE(ai_metadata, '{}'::jsonb), '{${jsonKey}}', to_jsonb(${placeholder}::${cast}), true)`
-        );
+        aiMetadataExpression =
+          `jsonb_set(${aiMetadataExpression}, '{${jsonKey}}', to_jsonb(${placeholder}::${cast}), true)`;
+        hasAiMetadataUpdate = true;
       }
     });
+
+    if (hasAiMetadataUpdate) {
+      clauses.push(`ai_metadata = ${aiMetadataExpression}`);
+    }
 
     if (clauses.length) {
       values.push(taskId);

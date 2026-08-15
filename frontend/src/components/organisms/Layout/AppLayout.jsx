@@ -1,10 +1,11 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  BrainCircuit, LayoutDashboard, ListTodo, Bot, FileText, LogOut,
-  Settings, ChevronRight, Wifi, WifiOff, Command
+  BrainCircuit, LayoutDashboard, ListTodo, Bot, FileText,
+  ChevronRight, Wifi, WifiOff, Command, ShieldCheck
 } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
 import { useSocket } from '../../../context/SocketContext';
+import ProfileDropdown from '../../ui/profile-dropdown';
+import { useAuth } from '../../../context/AuthContext';
 
 const NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -15,15 +16,10 @@ const NAV = [
 ];
 
 export default function AppLayout({ children }) {
-  const { user, logout } = useAuth();
   const { connected } = useSocket();
+  const { isAdmin } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const navItems = isAdmin ? [...NAV, { to: '/admin', icon: ShieldCheck, label: 'Administration' }] : NAV;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -40,7 +36,7 @@ export default function AppLayout({ children }) {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <p className="section-header px-2 mb-3">Workspace</p>
-          {NAV.map(({ to, icon: Icon, label }) => {
+          {navItems.map(({ to, icon: Icon, label }) => {
             const active = location.pathname === to;
             return (
               <Link key={to} to={to}
@@ -66,20 +62,7 @@ export default function AppLayout({ children }) {
           </div>
 
           {/* User */}
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
-            <img src={user?.avatar} alt={user?.username}
-              className="w-7 h-7 rounded-full bg-surface-3 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.username}</p>
-              <p className="text-xs text-white/30 capitalize truncate">{user?.role}</p>
-            </div>
-          </div>
-
-          <button onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm text-white/40 hover:text-red-400 hover:bg-red-500/5 transition-all">
-            <LogOut size={15} />
-            Sign out
-          </button>
+          <ProfileDropdown />
         </div>
       </aside>
 

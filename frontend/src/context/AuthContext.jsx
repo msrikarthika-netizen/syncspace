@@ -20,11 +20,21 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updates) => {
+    setUser((current) => {
+      if (!current) return current;
+      const nextUser = { ...current, ...updates };
+      localStorage.setItem('ss_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  }, []);
+
   const isAuthenticated = Boolean(user);
   const isManager = user?.role === 'manager' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isManager }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated, isManager, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
