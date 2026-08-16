@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   FileText, Search, BarChart2, Clock, CheckCircle2,
-  ArrowLeft, Bot, Download, ChevronDown, ChevronUp, Loader2
+  ArrowLeft, Bot, Download, ChevronDown, ChevronUp, Loader2, LayoutDashboard
 } from 'lucide-react';
 import { reportsAPI } from '../../apis';
 import { formatDistanceToNow } from 'date-fns';
@@ -170,10 +170,14 @@ export function ReportDetailPage() {
               {report.stats?.agentsUsed?.join(', ')}
             </p>
           </div>
-          <button onClick={handleDownload}
-            className="btn-secondary flex items-center gap-2 text-sm flex-shrink-0">
-            <Download size={14} /> Download
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2 flex-shrink-0">
+            <Link to={`/reports/${reportId}/dashboard`} className="btn-primary flex items-center gap-2 px-4 py-2.5 text-sm">
+              <LayoutDashboard size={15} /> View Dashboard
+            </Link>
+            <button onClick={handleDownload} className="btn-secondary flex items-center gap-2 text-sm">
+              <Download size={14} /> Download
+            </button>
+          </div>
         </div>
 
         {/* Stats */}

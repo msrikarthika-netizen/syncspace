@@ -200,6 +200,28 @@ docker compose down
 6. The final report is saved and attached to the task.
 7. The manager reviews the completed result in the reports area.
 
+## RAG knowledge base
+
+The AI service retrieves curated engineering guidance from PostgreSQL through
+pgvector before it decomposes a task. LangGraph checkpoints the workflow in the
+same database, so an interrupted task has durable execution state.
+
+After applying the backend migration and configuring `DATABASE_URL` in `ai/.env`,
+install the AI dependencies and ingest the bundled corpus:
+
+```powershell
+cd ai
+python -m pip install -r requirements.txt
+python -m scripts.ingest_knowledge_base
+```
+
+The source corpus lives in `ai/knowledge_base/`. Re-run the ingestion command
+after editing it; unchanged documents are skipped by checksum. Configure model,
+chunking, and retrieval behavior with `EMBEDDING_*` and `RAG_*` variables in the
+environment. The initial model, `BAAI/bge-small-en-v1.5`, requires a 384-dimension
+pgvector column. The service loads a cached model first; set
+`EMBEDDING_ALLOW_DOWNLOAD=false` after an offline deployment is fully provisioned.
+
 ## API Routes
 
 ### Backend

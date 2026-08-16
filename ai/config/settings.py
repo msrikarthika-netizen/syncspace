@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     backend_url: str = "http://localhost:3000"
     internal_webhook_secret: str = ""
     log_level: str = "INFO"
+    database_url: str = ""
+    rag_enabled: bool = True
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimensions: int = 384
+    embedding_version: str = "1"
+    embedding_allow_download: bool = True
+    rag_chunk_size: int = 1200
+    rag_chunk_overlap: int = 160
+    rag_retrieval_limit: int = 6
+    rag_min_similarity: float = 0.35
 
     @property
     def webhook_secret(self) -> str:

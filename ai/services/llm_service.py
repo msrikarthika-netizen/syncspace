@@ -49,7 +49,19 @@ async def call_hf(prompt: str, max_tokens: int = 1024, temperature: float = 0.4)
         raise RuntimeError(_inference_error_message(e)) from e
 
 
-async def break_task_into_subtasks(task_title: str, task_description: str) -> list[dict]:
+async def generate_direct_answer(question: str) -> str:
+    """Answer a small standalone question without invoking specialist agents."""
+    prompt = f"""Answer the user's question directly and accurately in one or two sentences.
+Do not describe a workflow, create a plan, or add headings.
+
+Question: {question}
+"""
+    return (await call_hf(prompt, max_tokens=120, temperature=0.1)).strip()
+
+
+async def break_task_into_subtasks(
+    task_title: str, task_description: str, knowledge_context: str = ""
+) -> list[dict]:
     """
     Use the LLM to decompose a task into typed subtasks for specialist agents.
     Returns a list of subtask dicts with keys: title, description, agent_type, order.
@@ -58,6 +70,9 @@ async def break_task_into_subtasks(task_title: str, task_description: str) -> li
 
 Task title: {task_title}
 Task description: {task_description}
+
+Curated engineering knowledge:
+{knowledge_context or 'No curated knowledge was retrieved for this task.'}
 
 Respond ONLY with a valid JSON array (no markdown, no explanation). Each item must have:
 - "title": short subtask title (max 60 chars)
@@ -158,7 +173,8 @@ def _default_subtasks(task_title: str) -> list[dict]:
 
 
 async def run_agent_task(agent_type: str, agent_name: str, task_title: str,
-                         subtask_title: str, subtask_description: str) -> str:
+                         subtask_title: str, subtask_description: str,
+                         knowledge_context: str = "") -> str:
     """Execute a specific agent's work using an agent-tailored prompt."""
     system_prompts = {
         "research": "You are a meticulous Research Agent. You gather facts, references, and contextual information with precision. Cite key points clearly.",
@@ -175,13 +191,27 @@ Main project: {task_title}
 Your assigned subtask: {subtask_title}
 Instructions: {subtask_description}
 
+Curated engineering knowledge (use only when relevant and do not claim a source
+you were not given):
+{knowledge_context or 'No curated knowledge was retrieved for this task.'}
+
 Complete this subtask thoroughly. Structure your response with clear sections. Be specific and detailed."""
+
+    prompt += """
+
+Formatting requirements:
+- Wrap every code example in a fenced Markdown block and include its language, for example ```python.
+- When a diagram materially clarifies an architecture, process, or workflow, include one valid fenced ```mermaid block.
+- Do not create diagrams merely for decoration.
+"""
 
     result = await call_hf(prompt, max_tokens=800, temperature=0.5)
     return result.strip()
 
 
-async def generate_report_summary(task_title: str, subtask_results: list[dict]) -> str:
+async def generate_report_summary(
+    task_title: str, subtask_results: list[dict], knowledge_context: str = ""
+) -> str:
     """Generate an executive summary from all agent results."""
     results_text = "\n\n".join(
         [f"--- {r['agent_name']} ({r['agent_type']}) ---\n{r['result'][:400]}"
@@ -191,6 +221,9 @@ async def generate_report_summary(task_title: str, subtask_results: list[dict]) 
 
 Agent outputs:
 {results_text}
+
+Curated knowledge used by the workflow:
+{knowledge_context or 'No curated knowledge was retrieved for this task.'}
 
 Write only the executive summary, no preamble:"""
 

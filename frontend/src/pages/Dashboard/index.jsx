@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -59,7 +59,7 @@ const statCards = [
   },
 ];
 
-function StatCard({ card, value }) {
+const StatCard = memo(function StatCard({ card, value }) {
   const Icon = card.icon;
 
   return (
@@ -80,9 +80,9 @@ function StatCard({ card, value }) {
       <p className="mt-1 text-sm text-white/45">{card.label}</p>
     </div>
   );
-}
+});
 
-function ProgressRing({ value }) {
+const ProgressRing = memo(function ProgressRing({ value }) {
   return (
     <div
       className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full"
@@ -94,7 +94,7 @@ function ProgressRing({ value }) {
       </div>
     </div>
   );
-}
+});
 
 export default function DashboardPage() {
   const { user, isManager } = useAuth();
@@ -103,13 +103,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     Promise.all([tasksAPI.list(), tasksAPI.stats()])
       .then(([tasksResponse, statsResponse]) => {
+        if (!active) return;
         setTasks(tasksResponse.data.data.slice(0, 6));
         setStats(statsResponse.data.data);
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
   const total = Number(stats?.total || 0);
@@ -124,11 +127,12 @@ export default function DashboardPage() {
     if (completed > 0) return 'Your workspace is up to date';
     return 'Ready when you are';
   }, [activeTasks, completed]);
+  const statValues = useMemo(() => ({ total: stats?.total, active: activeTasks, completed: stats?.completed, failed: stats?.failed }), [stats, activeTasks]);
 
   return (
     <div className="relative min-h-full overflow-hidden bg-[#0d0d14] px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[680px] overflow-hidden">
-        <img src={workspaceImage} alt="Team collaborating around a shared AI workspace" className="h-full w-full object-cover object-center opacity-35 saturate-[0.8]" />
+        <img src={workspaceImage} alt="Team collaborating around a shared AI workspace" fetchPriority="high" decoding="async" className="h-full w-full object-cover object-center opacity-35 saturate-[0.8]" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0d0d14] via-[#0d0d14]/80 to-[#0d0d14]/35" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d14]/10 via-[#0d0d14]/55 to-[#0d0d14]" />
       </div>
@@ -183,7 +187,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="relative h-36 w-full max-w-xs overflow-hidden rounded-2xl border border-white/10 bg-black/20 lg:h-40">
-              <img src={neuralNetworkImage} alt="Connected AI workflow visualization" className="h-full w-full object-cover opacity-65 mix-blend-screen" />
+              <img src={neuralNetworkImage} alt="Connected AI workflow visualization" loading="lazy" decoding="async" className="h-full w-full object-cover opacity-65 mix-blend-screen" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#10131a] via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg border border-white/10 bg-black/35 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 backdrop-blur-md">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" /> Neural network online
@@ -194,7 +198,7 @@ export default function DashboardPage() {
 
         <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           {statCards.map((card) => (
-            <StatCard key={card.key} card={card} value={card.key === 'active' ? activeTasks : stats?.[card.key]} />
+            <StatCard key={card.key} card={card} value={statValues[card.key]} />
           ))}
         </section>
 
@@ -261,7 +265,7 @@ export default function DashboardPage() {
   );
 }
 
-function TaskRow({ task }) {
+const TaskRow = memo(function TaskRow({ task }) {
   const isActive = !['completed', 'failed'].includes(task.status);
 
   return (
@@ -284,11 +288,11 @@ function TaskRow({ task }) {
       </div>
     </Link>
   );
-}
+});
 
-function StatusTile({ icon: Icon, label, value, color }) {
+const StatusTile = memo(function StatusTile({ icon: Icon, label, value, color }) {
   return <div className="rounded-2xl border border-white/10 bg-black/15 p-3"><Icon size={15} className={color} /><p className="mt-3 text-[10px] uppercase tracking-wider text-white/30">{label}</p><p className="mt-1 text-xs font-bold text-white/75">{value}</p></div>;
-}
+});
 
 function EmptyState({ isManager }) {
   return (

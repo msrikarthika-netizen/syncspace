@@ -61,6 +61,7 @@ async def process_task(request: TaskRequest, background_tasks: BackgroundTasks):
                 task_description=request.description,
                 user_id=request.user_id,
                 priority=request.priority,
+                tags=request.tags,
             )
             succeeded = result["status"] == "completed" and result["report_saved"]
             _task_status[task_id].update({

@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { useAuth } from './context/AuthContext';
 import AppLayout from './components/organisms/Layout/AppLayout';
 import LandingPage from './pages/Landing';
@@ -12,6 +13,8 @@ import ProfilePage from './pages/Profile';
 import SubscriptionPage from './pages/Subscription';
 import AdminPanelPage from './pages/Admin';
 import AdminLayout from './components/organisms/Layout/AdminLayout';
+
+const ReportDashboardPage = lazy(() => import('./pages/ReportDashboard'));
 
 function Protected({ children }) {
   const { isAuthenticated } = useAuth();
@@ -44,6 +47,7 @@ export default function AppRoutes() {
       <Route path="/tasks/new" element={<Protected><TaskManagerPage /></Protected>} />
       <Route path="/agents/:taskId" element={<Protected><AgentMonitorPage /></Protected>} />
       <Route path="/reports" element={<Protected><ReportsListPage /></Protected>} />
+      <Route path="/reports/:reportId/dashboard" element={<Protected><Suspense fallback={<div className="p-8 text-white/50">Loading dashboard…</div>}><ReportDashboardPage /></Suspense></Protected>} />
       <Route path="/reports/:reportId" element={<Protected><ReportDetailPage /></Protected>} />
       <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
       <Route path="/subscription" element={<Protected><SubscriptionPage /></Protected>} />

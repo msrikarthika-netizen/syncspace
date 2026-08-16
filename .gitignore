@@ -55,3 +55,4 @@ Desktop.ini
 /TECHNICAL_DOCUMENTATION.md
 /TECHNICAL_DOCUMENTATION.pdf
 /backend/migrations/old_sql_script
+/backend/migrations/001_rag_pgvector.sql

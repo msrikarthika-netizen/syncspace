@@ -9,13 +9,13 @@ class BaseAgent(ABC):
     agent_name: str = "General Agent"
     emoji: str = "🤖"
 
-    async def run(self, task_title: str, subtask: dict) -> dict:
+    async def run(self, task_title: str, subtask: dict, knowledge_context: str = "") -> dict:
         """Execute this agent's subtask and return a result dict."""
         started_at = datetime.now(timezone.utc)
         logger.info(f"{self.emoji} [{self.agent_name}] Starting: {subtask['title']}")
 
         try:
-            result = await self.execute(task_title, subtask)
+            result = await self.execute(task_title, subtask, knowledge_context)
             completed_at = datetime.now(timezone.utc)
             duration_ms = int((completed_at - started_at).total_seconds() * 1000)
 
@@ -49,7 +49,7 @@ class BaseAgent(ABC):
                 "duration_ms": int((completed_at - started_at).total_seconds() * 1000),
             }
 
-    async def execute(self, task_title: str, subtask: dict) -> str:
+    async def execute(self, task_title: str, subtask: dict, knowledge_context: str = "") -> str:
         """Default execution delegates to the LLM service."""
         return await run_agent_task(
             agent_type=self.agent_type,
@@ -57,4 +57,5 @@ class BaseAgent(ABC):
             task_title=task_title,
             subtask_title=subtask["title"],
             subtask_description=subtask["description"],
+            knowledge_context=knowledge_context,
         )

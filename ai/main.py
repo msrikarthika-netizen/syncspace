@@ -1,3 +1,9 @@
+from config.event_loop import configure_asyncio_event_loop
+
+# Psycopg async pools are incompatible with Windows' default Proactor loop.
+# Configure this before Uvicorn creates the application's event loop.
+configure_asyncio_event_loop()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
