@@ -3,12 +3,19 @@ import { DATABASE_URL, IS_PRODUCTION, NODE_ENV } from './serverConfig.js';
 
 const { Pool } = pg;
 
+const databaseUrl = new URL(DATABASE_URL);
+const isLocalDatabase = ['localhost', '127.0.0.1', '::1'].includes(databaseUrl.hostname);
+const shouldUseTls = IS_PRODUCTION && !isLocalDatabase;
+
+// pg is moving away from the ambiguous `require` SSL mode.  Use explicit
+// hostname and certificate verification for every non-local production DB.
+if (shouldUseTls) {
+  databaseUrl.searchParams.set('sslmode', 'verify-full');
+}
+
 export const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl:
-    IS_PRODUCTION && !DATABASE_URL.includes('localhost') && !DATABASE_URL.includes('127.0.0.1')
-      ? { rejectUnauthorized: false }
-      : false,
+  connectionString: databaseUrl.toString(),
+  ssl: shouldUseTls ? { rejectUnauthorized: true } : false,
 });
 
 pool.on('error', (error) => {

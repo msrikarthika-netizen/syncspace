@@ -15,6 +15,20 @@ app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', cred
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// ── Root endpoint ─────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'SyncSpace Backend API is running',
+    data: {
+      service: 'syncspace-backend',
+      env: NODE_ENV,
+      health: '/health',
+      api: '/api/v1',
+    },
+  });
+});
+
 // ── Health check ──────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'syncspace-backend', env: NODE_ENV, timestamp: new Date() });
