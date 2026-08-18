@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     hf_router_url: str = "https://router.huggingface.co/v1/chat/completions"
     redis_url: str = "redis://localhost:6379"
     redis_api_token: str = ""
-    backend_url: str = "http://localhost:3000"
+    backend_url: str = ""
+    backend_hostport: str = ""
     internal_webhook_secret: str = ""
     log_level: str = "INFO"
     database_url: str = ""
@@ -30,6 +31,14 @@ class Settings(BaseSettings):
         if self.node_env != "production":
             return "syncspace_dev_internal_webhook_secret"
         return ""
+
+    @property
+    def backend_base_url(self) -> str:
+        if self.backend_url:
+            return self.backend_url.rstrip("/")
+        if self.backend_hostport:
+            return f"http://{self.backend_hostport}".rstrip("/")
+        return "http://localhost:3000"
 
     class Config:
         env_file = ".env"

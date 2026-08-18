@@ -214,7 +214,7 @@ async def _notify_backend(endpoint: str, payload: dict, attempts: int = 3) -> di
 
     Orchestration cannot claim success until the backend has persisted the update.
     """
-    url = f"{settings.backend_url}{endpoint}"
+    url = f"{settings.backend_base_url}{endpoint}"
     headers = {}
     if settings.webhook_secret:
         headers["x-internal-secret"] = settings.webhook_secret

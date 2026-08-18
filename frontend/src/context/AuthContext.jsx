@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react';
+import { signOut } from 'firebase/auth';
+import { firebaseAuth } from '../config/firebase';
 
 const AuthContext = createContext(null);
 
@@ -14,7 +16,13 @@ export function AuthProvider({ children }) {
     setUser(userData);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await signOut(firebaseAuth);
+    } catch (error) {
+      // Clear the local application session even if Firebase is temporarily unreachable.
+      console.error('Firebase sign-out failed:', error);
+    }
     localStorage.removeItem('ss_token');
     localStorage.removeItem('ss_user');
     setUser(null);

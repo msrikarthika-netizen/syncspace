@@ -25,6 +25,7 @@
   <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=fff" alt="PostgreSQL badge" />
   <img src="https://img.shields.io/badge/Queue-Redis-DC382D?logo=redis&logoColor=fff" alt="Redis badge" />
   <img src="https://img.shields.io/badge/Auth-JWT-000000?logo=jsonwebtokens&logoColor=fff" alt="JWT badge" />
+  <img src="https://img.shields.io/badge/Auth-Firebase-FFCA28?logo=firebase&logoColor=000" alt="Firebase Authentication badge" />
   <img src="https://img.shields.io/badge/Validation-Zod-3E67B1?logo=zod&logoColor=fff" alt="Zod badge" />
   <img src="https://img.shields.io/badge/AI-Python-3776AB?logo=python&logoColor=fff" alt="Python badge" />
   <img src="https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=fff" alt="FastAPI badge" />
@@ -159,6 +160,14 @@ HUGGINGFACE_API_KEY=hf_your_key_here
 VITE_API_BASE_URL=http://localhost:3000/api/v1
 VITE_SOCKET_URL=http://localhost:3000
 VITE_AI_URL=http://localhost:8000
+VITE_FIREBASE_API_KEY=your_firebase_web_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_web_app_id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 ```
 
 Important notes:
@@ -166,6 +175,7 @@ Important notes:
 - Keep `INTERNAL_WEBHOOK_SECRET` identical in `backend/.env` and `ai/.env`.
 - `HUGGINGFACE_API_KEY` is required for real AI output.
 - PostgreSQL and Redis are already provided by `docker-compose.yml`.
+- Firebase Authentication uses the web values in `frontend/.env`. The backend also needs its own Firebase Admin service-account values in `backend/.env` so it can verify ID tokens; do not put that private key in frontend configuration.
 
 ### 2. Start The Stack
 

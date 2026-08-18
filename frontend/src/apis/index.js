@@ -2,6 +2,7 @@ import API from '../config/apiClient.js';
 
 // ── Auth ──────────────────────────────────────────────────────
 export const authAPI = {
+  firebaseSession: (data) => API.post('/auth/firebase/session', data),
   register: (data) => API.post('/auth/register', data),
   login: (data) => API.post('/auth/login', data),
   profile: () => API.get('/auth/profile'),

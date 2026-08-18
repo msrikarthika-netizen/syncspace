@@ -12,6 +12,7 @@ export const toUser = (row) => {
     username: row.username,
     email: row.email,
     passwordHash: row.password_hash,
+    firebaseUid: row.firebase_uid,
     avatar: row.avatar,
     role: row.role,
     isActive: row.is_active,

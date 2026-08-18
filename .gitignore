@@ -51,8 +51,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Local project documentation and legacy migration kept outside version control
+# Local project documentation kept outside version control
 /TECHNICAL_DOCUMENTATION.md
 /TECHNICAL_DOCUMENTATION.pdf
-/backend/migrations/old_sql_script
-/backend/migrations/001_rag_pgvector.sql

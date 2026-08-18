@@ -1,0 +1,75 @@
+services:
+  - type: web
+    name: syncspace-api
+    runtime: node
+    plan: starter
+    rootDir: backend
+    buildCommand: npm ci
+    preDeployCommand: npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 7d
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: AI_SERVICE_HOSTPORT
+        fromService:
+          type: pserv
+          name: syncspace-ai
+          property: hostport
+      - key: INTERNAL_WEBHOOK_SECRET
+        generateValue: true
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+
+  - type: pserv
+    name: syncspace-ai
+    runtime: python
+    plan: starter
+    rootDir: ai
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: web
+          name: syncspace-api
+          property: hostport
+      - key: INTERNAL_WEBHOOK_SECRET
+        fromService:
+          type: web
+          name: syncspace-api
+          envVarKey: INTERNAL_WEBHOOK_SECRET
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: HF_MODEL
+        value: Qwen/Qwen2.5-7B-Instruct:fastest
+      - key: RAG_ENABLED
+        value: "true"
+      - key: EMBEDDING_ALLOW_DOWNLOAD
+        value: "true"

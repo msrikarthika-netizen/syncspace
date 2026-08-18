@@ -3,7 +3,34 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../apis';
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile as updateFirebaseProfile,
+} from 'firebase/auth';
+import { firebaseAuth } from '../../config/firebase';
 import toast from 'react-hot-toast';
+
+const authErrorMessage = (err, fallback) => {
+  if (err.response?.data?.message) return err.response.data.message;
+  const messages = {
+    'auth/email-already-in-use': 'An account already exists for this email.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+    'auth/invalid-email': 'Enter a valid email address.',
+    'auth/weak-password': 'Use a password with at least 6 characters.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+    'auth/popup-blocked': 'Your browser blocked the Google sign-in popup. Please allow popups and try again.',
+  };
+  return messages[err.code] || fallback;
+};
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -11,20 +38,40 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handle = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await authAPI.login(form);
+      const credential = await signInWithEmailAndPassword(firebaseAuth, form.email, form.password);
+      const idToken = await credential.user.getIdToken();
+      const res = await authAPI.firebaseSession({ idToken, username: credential.user.displayName || undefined });
       const { token, user } = res.data.data;
       login(token, user);
       toast.success(`Welcome back, ${user.username}!`);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      toast.error(authErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const credential = await signInWithPopup(firebaseAuth, googleProvider);
+      const idToken = await credential.user.getIdToken();
+      const res = await authAPI.firebaseSession({ idToken, username: credential.user.displayName || undefined });
+      const { token, user } = res.data.data;
+      login(token, user);
+      toast.success(`Welcome, ${user.username}!`);
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(authErrorMessage(err, 'Google sign-in failed'));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -49,6 +96,12 @@ export function LoginPage() {
       <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
         {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : 'Sign in'}
       </button>
+      <div className="flex items-center gap-3 text-xs text-white/30"><span className="h-px flex-1 bg-white/10" />or<span className="h-px flex-1 bg-white/10" /></div>
+      <button type="button" onClick={handleGoogleSignIn} disabled={loading || googleLoading}
+        className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">
+        {googleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleMark />}
+        {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+      </button>
       <p className="text-center text-sm text-white/40">
         No account? <Link to="/register" className="text-brand-400 hover:text-brand-300">Create one free</Link>
       </p>
@@ -56,8 +109,18 @@ export function LoginPage() {
   </AuthLayout>;
 }
 
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path fill="#4285F4" d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.8 3.1-4.4 3.1-7.4Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2 .9-3.5.9-2.7 0-5-1.8-5.8-4.3H2.9v2.6A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.2 13.7A6 6 0 0 1 5.9 12c0-.6.1-1.2.3-1.7V7.7H2.9A10 10 0 0 0 2 12c0 1.6.4 3.1.9 4.3l3.3-2.6Z" />
+      <path fill="#EA4335" d="M12 6c1.5 0 2.9.5 4 1.6l3-3A10 10 0 0 0 2.9 7.7l3.3 2.6C7 7.8 9.3 6 12 6Z" />
+    </svg>
+  );
+}
+
 export function RegisterPage() {
-  const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', email: '', password: '', role: 'manager' });
   const [showPass, setShowPass] = useState(false);
@@ -67,13 +130,21 @@ export function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await authAPI.register(form);
-      const { token, user } = res.data.data;
-      login(token, user);
-      toast.success('Account created — welcome to SyncSpace!');
-      navigate('/dashboard');
+      const credential = await createUserWithEmailAndPassword(firebaseAuth, form.email, form.password);
+      await updateFirebaseProfile(credential.user, { displayName: form.username });
+      const idToken = await credential.user.getIdToken();
+      await authAPI.firebaseSession({
+        idToken,
+        username: form.username,
+        role: form.role,
+        registration: true,
+      });
+      await sendEmailVerification(credential.user);
+      await signOut(firebaseAuth);
+      toast.success('Account created. Check your email to verify it, then sign in.');
+      navigate('/login');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      toast.error(authErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +154,8 @@ export function RegisterPage() {
     <form onSubmit={handle} className="space-y-5">
       <div>
         <label className="label">Username</label>
-        <input className="input" placeholder="e.g. john_manager"
+        <input className="input" placeholder="e.g. john_manager" pattern="[A-Za-z0-9_]{3,80}"
+          title="Use 3–80 letters, numbers, or underscores."
           value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} required />
       </div>
       <div>

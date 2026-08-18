@@ -1,6 +1,55 @@
 import authService from '../services/authService.js';
 import { successResponse, errorResponse } from '../utils/common/responseObjects.js';
 import StatusCodes from 'http-status-codes';
+import { verifyFirebaseIdToken } from '../config/firebaseAdmin.js';
+
+export const createFirebaseSession = async (req, res) => {
+  const { idToken, username, role, registration = false } = req.body || {};
+  if (!idToken) {
+    return res.status(StatusCodes.BAD_REQUEST).json(errorResponse('Firebase ID token is required'));
+  }
+
+  try {
+    const decodedToken = await verifyFirebaseIdToken(idToken);
+    if (!decodedToken.email) {
+      return res.status(StatusCodes.FORBIDDEN).json(errorResponse('The Firebase account does not have an email address'));
+    }
+
+    if (!decodedToken.email_verified) {
+      if (!registration) {
+        return res.status(StatusCodes.FORBIDDEN).json(errorResponse('Verify your email address before signing in'));
+      }
+
+      await authService.registerWithFirebase({
+        firebaseUid: decodedToken.uid,
+        email: decodedToken.email,
+        username,
+        role,
+      });
+      return res.status(StatusCodes.ACCEPTED).json(successResponse(
+        { requiresEmailVerification: true },
+        'Account created. Verify your email address before signing in.'
+      ));
+    }
+
+    const session = await authService.loginWithFirebase({
+      firebaseUid: decodedToken.uid,
+      email: decodedToken.email,
+      username,
+      role,
+      allowGeneratedUsername: decodedToken.firebase?.sign_in_provider === 'google.com',
+    });
+    return res.status(StatusCodes.OK).json(successResponse(session, 'Firebase session verified'));
+  } catch (err) {
+    if (err.message.includes('not configured')) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorResponse(err.message));
+    }
+    if (err.message === 'Username already taken' || err.message.startsWith('Choose a username') || err.message.startsWith('An account already exists')) {
+      return res.status(StatusCodes.BAD_REQUEST).json(errorResponse(err.message));
+    }
+    return res.status(StatusCodes.UNAUTHORIZED).json(errorResponse('Firebase authentication failed'));
+  }
+};
 
 export const register = async (req, res) => {
   try {
