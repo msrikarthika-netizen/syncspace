@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     hf_router_url: str = "https://router.huggingface.co/v1/chat/completions"
     redis_url: str = "redis://localhost:6379"
     redis_api_token: str = ""
+    frontend_url: str = ""
     backend_url: str = ""
     backend_hostport: str = ""
     internal_webhook_secret: str = ""
@@ -39,6 +40,13 @@ class Settings(BaseSettings):
         if self.backend_hostport:
             return f"http://{self.backend_hostport}".rstrip("/")
         return "http://localhost:3000"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = ["http://localhost:3000", "http://localhost:5173"]
+        if self.frontend_url:
+            origins.append(self.frontend_url.rstrip("/"))
+        return origins
 
     class Config:
         env_file = ".env"

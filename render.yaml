@@ -22,7 +22,9 @@ services:
       - key: REDIS_URL
         sync: false
       - key: FRONTEND_URL
-        sync: false
+        value: https://syncspace-neon.vercel.app
+      - key: AI_SERVICE_URL
+        value: https://syncspace-1-9n94.onrender.com
       - key: AI_SERVICE_HOSTPORT
         fromService:
           type: pserv
@@ -57,6 +59,10 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      - key: FRONTEND_URL
+        value: https://syncspace-neon.vercel.app
+      - key: BACKEND_URL
+        value: https://syncspace-34yh.onrender.com
       - key: BACKEND_HOSTPORT
         fromService:
           type: web

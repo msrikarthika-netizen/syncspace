@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { FRONTEND_ORIGINS } from '../config/serverConfig.js';
 import { SOCKET_EVENTS } from '../utils/common/eventConstants.js';
 
 let io;
@@ -6,7 +7,7 @@ let io;
 export const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: FRONTEND_ORIGINS,
       methods: ['GET', 'POST'],
     },
     transports: ['websocket', 'polling'],

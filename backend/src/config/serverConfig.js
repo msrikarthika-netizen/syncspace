@@ -19,6 +19,15 @@ export const JWT_SECRET = process.env.JWT_SECRET || 'syncspace_dev_secret_change
 export const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
 export const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 export const REDIS_API_TOKEN = process.env.REDIS_API_TOKEN;
+const configuredFrontendOrigins = [process.env.FRONTEND_URL, process.env.FRONTEND_URLS]
+  .filter(Boolean)
+  .flatMap((value) => value.split(','))
+  .map((value) => value.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+export const FRONTEND_ORIGINS = Array.from(
+  new Set(['http://localhost:5173', 'http://localhost:3000', ...configuredFrontendOrigins])
+);
+export const FRONTEND_URL = configuredFrontendOrigins[0] || 'http://localhost:5173';
 const AI_SERVICE_HOSTPORT = process.env.AI_SERVICE_HOSTPORT?.trim();
 export const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL ||
