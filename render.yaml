@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: syncspace-api
+    name: syncspace
     runtime: node
     plan: starter
     rootDir: backend
