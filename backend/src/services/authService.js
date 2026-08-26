@@ -1,8 +1,37 @@
 import bcrypt from 'bcryptjs';
 import userRepository from '../repositories/userRepository.js';
 import { generateToken } from '../utils/common/authUtils.js';
+import { ADMIN_EMAIL } from '../config/serverConfig.js';
 
 class AuthService {
+  isConfiguredAdmin(email) {
+    return Boolean(
+      ADMIN_EMAIL &&
+      typeof email === 'string' &&
+      email.trim().toLowerCase() === ADMIN_EMAIL
+    );
+  }
+
+  async applyConfiguredAdminRole(user) {
+    if (!user || !this.isConfiguredAdmin(user.email)) return user;
+
+    // Do this during authentication as well as at startup. The account may
+    // have been registered after the process started, or ADMIN_EMAIL may have
+    // been added during a deploy.
+    if (user.role !== 'admin' || user.isActive === false) {
+      return userRepository.promoteAndActivateByEmail(user.email);
+    }
+
+    return user;
+  }
+
+  requestedRole(email, role) {
+    // Only the email explicitly configured on the server can receive admin.
+    // A role supplied by a browser can never grant this privilege.
+    if (this.isConfiguredAdmin(email)) return 'admin';
+    return role === 'manager' ? 'manager' : 'member';
+  }
+
   toSession(user) {
     const token = generateToken({ id: user._id, email: user.email, role: user.role });
     return {
@@ -25,16 +54,17 @@ class AuthService {
     if (existingUsername) throw new Error('Username already taken');
 
     const passwordHash = await bcrypt.hash(password, 10);
-    // Public registration can select a contributor or manager workspace role,
-    // but never grants privileged administrator access.
-    const requestedRole = role === 'manager' ? 'manager' : 'member';
+    // Public registration can select a contributor or manager workspace role.
+    // The server-configured bootstrap email is the sole exception.
+    const requestedRole = this.requestedRole(email, role);
     const user = await userRepository.create({ username, email, passwordHash, role: requestedRole });
     return this.toSession(user);
   }
 
   async login({ email, password }) {
-    const user = await userRepository.findByEmail(email);
+    let user = await userRepository.findByEmail(email);
     if (!user) throw new Error('Invalid email or password');
+    user = await this.applyConfiguredAdminRole(user);
     if (user.isActive === false) throw new Error('This account has been suspended');
 
     const isMatch = bcrypt.compareSync(password, user.passwordHash);
@@ -73,7 +103,7 @@ class AuthService {
         }
       }
 
-      const requestedRole = role === 'manager' ? 'manager' : 'member';
+      const requestedRole = this.requestedRole(email, role);
       user = await userRepository.create({
         username: requestedUsername,
         email,
@@ -82,6 +112,7 @@ class AuthService {
       });
     }
 
+    user = await this.applyConfiguredAdminRole(user);
     if (user.isActive === false) throw new Error('This account has been suspended');
     return this.toSession(user);
   }
@@ -106,7 +137,7 @@ class AuthService {
     return userRepository.create({
       username: requestedUsername,
       email,
-      role: role === 'manager' ? 'manager' : 'member',
+      role: this.requestedRole(email, role),
       firebaseUid,
     });
   }
